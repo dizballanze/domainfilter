@@ -1,4 +1,4 @@
-#!/user/bin/env node
+#!/usr/bin/env node
 require("coffee-script");
 run = require("./app").run;
 run();
