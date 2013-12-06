@@ -1,0 +1,35 @@
+{
+  "name": "domainfilter",
+  "version": "0.0.1",
+  "description": "Domain filter cli-tool.",
+  "main": "app/app.coffee",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:dizballanze/domainfilter.git"
+  },
+  "keywords": [
+    "nodejs",
+    "domains"
+  ],
+  "author": "Yuri Shykanov",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/dizballanze/domainfilter/issues"
+  },
+  "dependencies": {
+    "coffee-script": "~1.6.3",
+    "wordpos": "~0.1.8",
+    "cli": "~0.4.5"
+  },
+  "devDependencies": {
+    "should": "~2.1.1",
+    "mocha": "~1.15.1",
+    "coffeelint": "~1.0.2"
+  },
+  "bin": {
+    "domainfilter": "app/run"
+  }
+}
