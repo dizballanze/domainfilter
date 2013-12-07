@@ -2,6 +2,7 @@
 Domain filtering cli-tool.
 ###
 
+_ = require "lodash"
 cli = require("cli").enable "status"
 cli.setUsage "domainfilter [OPTIONS] domains-list.txt"
 
@@ -87,3 +88,59 @@ exports.find_domain = find_domain = (line)->
   res = line.match /[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}/
   return res[0] if res
   return false
+
+exports.word_combination_lazy = word_combination_lazy = (base_word, words_count, skip_count=0)->
+
+  # Special cases
+  if (words_count == 1) and (skip_count == 0)
+    return (-> return [base_word])
+
+  # Product iterator filter
+  filter = (val)->
+    sum = _.reduce val, (sum, num)->
+      return sum + num
+    return (sum == base_word.length)
+
+  # Init product iterator
+  lists = []
+  for i in [0...words_count]
+    lists.push [1...base_word.length]
+  prod_iter = product_lazy lists, filter
+
+
+  skip_counter = no
+  is_ended = no
+  skip_iteration = 0
+
+  iter = ->
+    # If all data was processed
+    return false if is_ended
+    # Special case
+    if skip_count and (not skip_counter)
+      skip_counter = yes
+      return [base_word]
+
+    divisions = prod_iter()
+    if not divisions
+      if skip_count
+        new_lists = lists[..]
+        if skip_iteration <= words_count
+          new_lists.splice skip_iteration, 0, [1..skip_count]
+          skip_iteration += 1
+        else
+          skip_count = 0
+
+        prod_iter = product_lazy new_lists, filter
+        return iter()
+      else
+        is_ended = yes
+      return false
+    result = []
+    prev = 0
+    for div in divisions
+      continue if not div
+      result.push base_word[prev...(prev+div)]
+      prev += div
+    return result
+
+  return iter
