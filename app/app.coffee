@@ -21,6 +21,13 @@ exports.run = ->
     console.log options
 
 
+exports.input_validation = (args, options)->
+  # Validate pattern
+  throw new Error("You should specify domains list file pathname") if args.length == 0
+  throw new Error("You should specify pattern") if options.pattern.length == 0
+  throw new Error("You should specify correct pattern") if not options.pattern.match /^[navd]+$/
+
+
 # Lazy cartesian product with filter
 exports.product_lazy = (lists, filter)->
   # Arguments validation
@@ -48,7 +55,6 @@ exports.product_lazy = (lists, filter)->
     for list_index, counter of counters
       value.push lists[list_index][counter]
 
-
     # Update counters
     for i in [(lists.length-1)..0]
       list = lists[i]
@@ -59,6 +65,7 @@ exports.product_lazy = (lists, filter)->
         is_ended = yes if i == 0
         counters[i] = 0
 
+    # Use filter
     if not filter(value)
       return iter()
 
