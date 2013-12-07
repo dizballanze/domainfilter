@@ -2,7 +2,7 @@
 Domain filtering cli-tool.
 ###
 
-cli = require "cli"
+cli = require("cli").enable "status"
 cli.setUsage "domainfilter [OPTIONS] domains-list.txt"
 
 
@@ -20,16 +20,23 @@ exports.run = ->
     console.log args
     console.log options
 
+    try
+      input_validation args, options
+    catch e
+      cli.fatal e.message
 
-exports.input_validation = (args, options)->
-  # Validate pattern
+
+# Input validation
+exports.input_validation = input_validation = (args, options)->
+  # Valudate pathname
   throw new Error("You should specify domains list file pathname") if args.length == 0
+  # Validate pattern
   throw new Error("You should specify pattern") if options.pattern.length == 0
   throw new Error("You should specify correct pattern") if not options.pattern.match /^[navd]+$/
 
 
 # Lazy cartesian product with filter
-exports.product_lazy = (lists, filter)->
+exports.product_lazy = product_lazy = (lists, filter)->
   # Arguments validation
   if (not lists?)
     throw new Error("`lists` argument are required")
