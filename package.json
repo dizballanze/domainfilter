@@ -2,7 +2,7 @@
   "name": "domainfilter",
   "version": "0.0.1",
   "description": "Domain filter cli-tool.",
-  "main": "app/app.coffee",
+  "main": "app/run.js",
   "scripts": {
     "test": "mocha"
   },
@@ -22,7 +22,8 @@
   "dependencies": {
     "coffee-script": "~1.6.3",
     "wordpos": "~0.1.8",
-    "cli": "~0.4.5"
+    "cli": "~0.4.5",
+    "lodash": "~2.4.1"
   },
   "devDependencies": {
     "should": "~2.1.1",
