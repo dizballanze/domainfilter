@@ -20,6 +20,7 @@ exports.run = ->
     console.log args
     console.log options
 
+    # Validation
     try
       input_validation args, options
     catch e
@@ -79,3 +80,10 @@ exports.product_lazy = product_lazy = (lists, filter)->
     return value
 
   return iter
+
+
+# Find domain name in string
+exports.find_domain = find_domain = (line)->
+  res = line.match /[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}/
+  return res[0] if res
+  return false
