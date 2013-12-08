@@ -22,14 +22,14 @@ describe "Lazy word combination", ->
 
   it "should return correct words (1 words count)", ->
     iter = word_combination_lazy TEST_WORD_1, 1
-    iter().should.be.eql [TEST_WORD_1]
+    iter().result.should.be.eql [TEST_WORD_1]
 
   it "should return correct words (2 words count)", ->
     expected = ["m,yday","my,day","myd,ay","myda,y"]
     iter = word_combination_lazy TEST_WORD_2, 2
     results = []
     for i in [0...expected.length]
-      res = iter()
+      res = iter().result
       results.push "#{res[0]},#{res[1]}"
     diff = _.difference expected, results
     diff.should.have.length 0
@@ -41,7 +41,7 @@ describe "Lazy word combination", ->
     iter = word_combination_lazy TEST_WORD_3, 3
     results = []
     for i in [0...expected.length]
-      res = iter()
+      res = iter().result
       results.push "#{res[0]},#{res[1]},#{res[2]}"
     diff = _.difference expected, results
     diff.should.have.length 0
@@ -59,7 +59,7 @@ describe "Lazy word combination", ->
     iter = word_combination_lazy TEST_WORD_1, 1, 3
     results = []
     while true
-      res = iter()
+      res = iter().result
       break if not res
       results.push res.join(",")
     diff = _.difference expected, results
@@ -71,5 +71,5 @@ describe "Lazy word combination", ->
     iter = word_combination_lazy TEST_WORD_3, 3
     for i in [0...15]
       iter().should.be.ok
-    iter().should.be.false
-    iter().should.be.false
+    iter().result.should.be.false
+    iter().result.should.be.false

@@ -3,6 +3,11 @@ Domain filtering cli-tool.
 ###
 
 _ = require "lodash"
+async = require "async"
+fs = require "fs"
+line_reader = require "line-reader"
+WordPOS = require "wordpos"
+wordpos = new WordPOS
 cli = require("cli").enable "status"
 cli.setUsage "domainfilter [OPTIONS] domains-list.txt"
 
@@ -18,14 +23,48 @@ exports.run = ->
     "include-dashes": [no, "process domains with dashes", "bool", no]
 
   cli.main (args, options)->
-    console.log args
-    console.log options
-
     # Validation
     try
       input_validation args, options
     catch e
       cli.fatal e.message
+
+    line_reader.eachLine args[0], (line, last, cb)->
+
+      # Find domain in line
+      domain = find_domain line
+      if not domain
+        cb() if not last
+        return
+
+      # Skip domains with dashes if needed
+      if not options["include-dashes"] and ("-" in domain)
+        cb() if not last
+        return
+
+      # Clear digits if needed
+      word = domain.split(".")[0]
+      if options["ignore-digits"]
+        word = word.replace /\d/g, ""
+
+      # Collect all combinations
+      iter = word_combination_lazy word, options.pattern.length, options["skip-symbols"]
+      results = []
+      while true
+        res = iter()
+        break if not res.result
+        if "skip" of res
+          res.result.splice res.skip, 1
+        results.push res.result
+
+      # Check if any matches
+      async.some results, (words, callback)->
+        match words, options.pattern, (is_matched)->
+          if is_matched
+            console.log "- #{domain} is matched by #{words}"
+          callback is_matched
+      , (result)->
+        cb() if not last
 
 
 # Input validation
@@ -35,6 +74,21 @@ exports.input_validation = input_validation = (args, options)->
   # Validate pattern
   throw new Error("You should specify pattern") if options.pattern.length == 0
   throw new Error("You should specify correct pattern") if not options.pattern.match /^[navd]+$/
+
+
+pos_methods =
+  "n": "isNoun"
+  "v": "isVerb"
+  "a": "isAdjective"
+  "d": "isAdverb"
+
+exports.match = match = (words, pattern, callback)->
+  arr = _.zip [0...pattern.length], pattern.split("")
+  async.every arr, (item, cb)->
+    [index, pos] = item
+    word = words[index]
+    wordpos[pos_methods[pos]] word, cb
+  , callback
 
 
 # Lazy cartesian product with filter
@@ -89,11 +143,17 @@ exports.find_domain = find_domain = (line)->
   return res[0] if res
   return false
 
+
 exports.word_combination_lazy = word_combination_lazy = (base_word, words_count, skip_count=0)->
+
+  is_ended = no
 
   # Special cases
   if (words_count == 1) and (skip_count == 0)
-    return (-> return [base_word])
+    return ->
+      return result: false if is_ended
+      is_ended = yes
+      return result: [base_word]
 
   # Product iterator filter
   filter = (val)->
@@ -109,16 +169,15 @@ exports.word_combination_lazy = word_combination_lazy = (base_word, words_count,
 
 
   skip_counter = no
-  is_ended = no
   skip_iteration = 0
 
   iter = ->
     # If all data was processed
-    return false if is_ended
+    return result: false if is_ended
     # Special case
-    if skip_count and (not skip_counter)
+    if skip_count and (not skip_counter) and (words_count == 1)
       skip_counter = yes
-      return [base_word]
+      return result: [base_word]
 
     divisions = prod_iter()
     if not divisions
@@ -134,13 +193,17 @@ exports.word_combination_lazy = word_combination_lazy = (base_word, words_count,
         return iter()
       else
         is_ended = yes
-      return false
+      return result: false
     result = []
     prev = 0
     for div in divisions
       continue if not div
       result.push base_word[prev...(prev+div)]
       prev += div
-    return result
+    res =
+      result: result
+    if skip_iteration
+      res.skip = skip_iteration - 1
+    return res
 
   return iter

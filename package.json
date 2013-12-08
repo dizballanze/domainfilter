@@ -23,7 +23,9 @@
     "coffee-script": "~1.6.3",
     "wordpos": "~0.1.8",
     "cli": "~0.4.5",
-    "lodash": "~2.4.1"
+    "lodash": "~2.4.1",
+    "line-reader": "~0.2.3",
+    "async": "~0.2.9"
   },
   "devDependencies": {
     "should": "~2.1.1",
