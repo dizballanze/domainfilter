@@ -1,7 +1,7 @@
 domainfilter
 ============
 
-Simple domain filters cli-tool.
+Simple domain filtering cli-tool.
 
 Parameters:
 -----------
