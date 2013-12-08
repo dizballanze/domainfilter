@@ -26,3 +26,8 @@ Example of usage:
 ```
 domainfilter -p na -s 2 -m ./success.txt -o fail.txt /Users/johndoe/PoolDeletingDomainsList.txt
 ```
+
+Word definitions
+----------------
+
+Word definitions can be found [here](http://wordnetweb.princeton.edu/perl/webwn).

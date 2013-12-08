@@ -5,6 +5,7 @@ Domain filtering cli-tool.
 _ = require "lodash"
 async = require "async"
 fs = require "fs"
+wc = require "flavored-wc"
 line_reader = require "line-reader"
 WordPOS = require "wordpos"
 wordpos = new WordPOS
@@ -16,6 +17,7 @@ cli.setUsage "domainfilter [OPTIONS] domains-list.txt"
 exports.run = ->
   cli.parse
     "pattern": ["p", "word matching pattern", "string", "n"]
+    "domains": ["d", "allowed domains separated by commas", "string", no]
     "skip-symbols": ["s", "skip symbols count", "number", 0]
     "matches-file": ["m", "pathname to file for saving matches", "path", "./matches.txt"]
     "others-file": ["o", "pathname to file for saving not matched domains", "path", "./others.txt"]
@@ -29,47 +31,77 @@ exports.run = ->
     catch e
       cli.fatal e.message
 
+    # Domains
+    if options.domains
+      options.domains = options.domains.split ","
+
     # Init writer
     writer = new Writer options["matches-file"], options["others-file"]
 
-    line_reader.eachLine args[0], (line, last, cb)->
+    # Get total lines in file (for progress tracking)
+    wc args[0],
+      lines: yes
+    , (err, counters)->
+      total_lines = counters.lines
 
-      # Find domain in line
-      domain = find_domain line
-      if not domain
-        cb() if not last
-        return
+      current_line = 0
+      # Process file
+      line_reader.eachLine args[0], (line, last, cb)->
 
-      # Skip domains with dashes if needed
-      if not options["include-dashes"] and ("-" in domain)
-        writer.write_other domain
-        cb() if not last
-        return
+        cli.progress (++current_line / total_lines)
 
-      # Clear digits if needed
-      word = domain.split(".")[0]
-      if options["ignore-digits"]
-        word = word.replace /\d/g, ""
+        if last
+          cli.progress 1
+          cli.ok 'Finished!'
 
-      # Collect all combinations
-      iter = word_combination_lazy word, options.pattern.length, options["skip-symbols"]
-      results = []
-      while true
-        res = iter()
-        break if not res.result
-        if "skip" of res
-          res.result.splice res.skip, 1
-        results.push res.result
+        # Find domain in line
+        domain = find_domain line
+        if not domain
+          cb() if not last
+          return
 
-      # Check if any matches
-      async.some results, (words, callback)->
-        match words, options.pattern, callback
-      , (result)->
-        if result
-          writer.write_match domain
-        else
+        # Skip domains with dashes if needed
+        if not options["include-dashes"] and ("-" in domain)
           writer.write_other domain
-        cb() if not last
+          cb() if not last
+          return
+
+        # Clear digits if needed
+        word = domain.split(".")[0]
+        domain_zone = domain.replace "#{word}.", ""
+        if word.match /\d/
+          if options["ignore-digits"]
+            word = word.replace /\d/g, ""
+          else
+            writer.write_other domain
+            cb() if not last
+            return
+
+        # Skip by domain
+        if options.domains and (domain_zone not in options.domains)
+          writer.write_other domain
+          cb() if not last
+          return
+
+        # Collect all combinations
+        iter = word_combination_lazy word, options.pattern.length, options["skip-symbols"]
+        results = []
+        while true
+          res = iter()
+          break if not res.result
+          if "skip" of res
+            res.result.splice res.skip, 1
+          results.push res.result
+
+        # Check if any matches
+        async.some results, (words, callback)->
+          match words, options.pattern, callback
+        , (result)->
+          if result
+            writer.write_match domain
+          else
+            writer.write_other domain
+          cb() if not last
 
 
 class Writer
@@ -100,6 +132,12 @@ pos_methods =
   "v": "isVerb"
   "a": "isAdjective"
   "d": "isAdverb"
+
+pos_methods_lookup =
+  "n": "lookupNoun"
+  "v": "lookupVerb"
+  "a": "lookupAdjective"
+  "d": "lookupAdverb"
 
 exports.match = match = (words, pattern, callback)->
   arr = _.zip [0...pattern.length], pattern.split("")
