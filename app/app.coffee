@@ -18,7 +18,7 @@ exports.run = ->
     "pattern": ["p", "word matching pattern", "string", "n"]
     "skip-symbols": ["s", "skip symbols count", "number", 0]
     "matches-file": ["m", "pathname to file for saving matches", "path", "./matches.txt"]
-    "others-file": ["o", "pathname to file for saving not matched domains", "path", "other.txt"]
+    "others-file": ["o", "pathname to file for saving not matched domains", "path", "./others.txt"]
     "ignore-digits": [no, "ignore digit symbols", "bool", no]
     "include-dashes": [no, "process domains with dashes", "bool", no]
 
@@ -28,6 +28,9 @@ exports.run = ->
       input_validation args, options
     catch e
       cli.fatal e.message
+
+    # Init writer
+    writer = new Writer options["matches-file"], options["others-file"]
 
     line_reader.eachLine args[0], (line, last, cb)->
 
@@ -39,6 +42,7 @@ exports.run = ->
 
       # Skip domains with dashes if needed
       if not options["include-dashes"] and ("-" in domain)
+        writer.write_other domain
         cb() if not last
         return
 
@@ -59,12 +63,27 @@ exports.run = ->
 
       # Check if any matches
       async.some results, (words, callback)->
-        match words, options.pattern, (is_matched)->
-          if is_matched
-            console.log "- #{domain} is matched by #{words}"
-          callback is_matched
+        match words, options.pattern, callback
       , (result)->
+        if result
+          writer.write_match domain
+        else
+          writer.write_other domain
         cb() if not last
+
+
+class Writer
+
+  constructor: (@matches_file, @others_file)->
+
+  write_match: (domain)->
+    @_write @matches_file, "#{domain}\n"
+
+  write_other: (domain)->
+    @_write @others_file, "#{domain}\n"
+
+  _write: (filename, line)->
+    fs.appendFile filename, line, (->)
 
 
 # Input validation
