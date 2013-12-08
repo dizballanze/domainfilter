@@ -29,3 +29,8 @@ Options:
   -h, --help             Display help and usage details
 
 ```
+
+Word definitions
+----------------
+
+Word definitions can be found [here](http://wordnetweb.princeton.edu/perl/webwn).
