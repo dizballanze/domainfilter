@@ -13,6 +13,8 @@ List of acceptable parameters, default values and description.
     -  `a` - adjectives
     -  `v` - verbs
     -  `d` - adverbs
+-  `--domains -d` - allowed domains separated by commas (net,com,org)
+-  `--max-length -l` - maximum allowed domain length
 -  `--skip-symbols -s 0` - skip symbols count
 -  `--matches-file -m ./matches.txt` - pathname to file for saving matches
 -  `--others-file -o ./others.txt` - pathname to file for saving not matched domains

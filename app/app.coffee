@@ -18,6 +18,7 @@ exports.run = ->
   cli.parse
     "pattern": ["p", "word matching pattern", "string", "n"]
     "domains": ["d", "allowed domains separated by commas", "string", no]
+    "max-length": ["l", "maximum allowed domain length", "number", 0]
     "skip-symbols": ["s", "skip symbols count", "number", 0]
     "matches-file": ["m", "pathname to file for saving matches", "path", "./matches.txt"]
     "others-file": ["o", "pathname to file for saving not matched domains", "path", "./others.txt"]
@@ -52,7 +53,8 @@ exports.run = ->
 
         if last
           cli.progress 1
-          cli.ok 'Finished!'
+          cli.ok "Finished! Matches: #{writer.matches_count}, others: #{writer.others_count}."
+          return
 
         # Find domain in line
         domain = find_domain line
@@ -62,6 +64,12 @@ exports.run = ->
 
         # Skip domains with dashes if needed
         if not options["include-dashes"] and ("-" in domain)
+          writer.write_other domain
+          cb() if not last
+          return
+
+        # Skip by length
+        if options["max-length"] and (domain.length > options["max-length"])
           writer.write_other domain
           cb() if not last
           return
@@ -107,11 +115,15 @@ exports.run = ->
 class Writer
 
   constructor: (@matches_file, @others_file)->
+    @others_count = 0
+    @matches_count = 0
 
   write_match: (domain)->
+    @matches_count++
     @_write @matches_file, "#{domain}\n"
 
   write_other: (domain)->
+    @others_count++
     @_write @others_file, "#{domain}\n"
 
   _write: (filename, line)->
